@@ -8,12 +8,10 @@ import h5py
 import json
 from utils import *
 import chess.pgn
+from Board import Board
 
 if __name__ == "__main__":
 
-    games_used = 0
-
-    positions = []
     moves_chosen = []
     results = []
 
@@ -22,7 +20,7 @@ if __name__ == "__main__":
         print(file)
         pgn = open(file)
 
-        for i in range(75000):
+        for i in range(150):
             try:
                 game = chess.pgn.read_game(pgn)
                 whiteElo = int(game.headers["WhiteElo"])
@@ -37,13 +35,61 @@ if __name__ == "__main__":
                     result = 0
 
                 if (whiteElo > 2100 and int(time_control[0]) > 90) or \
-                    (whiteElo > 1900 and (int(time_control[0])/60 + int(time_control[1])) >= 3) or \
+                        (whiteElo > 1900 and (int(time_control[0]) / 60 + int(time_control[1])) >= 3) or \
                         (whiteElo > 2300):
 
-                    games_used += 1
+                    single_game = []
 
-                    if games_used % 100 == 0:
-                        print(games_used)
+                    board = game.board()
+                    for move in game.mainline_moves():
+                        board.push_uci(move.uci())
+                        single_game.append(move.uci())
+                    moves_chosen.append(single_game)
+                    results.append(result)
+
             except:
                 continue
 
+    print("Reading through", len(results), "games...")
+
+    states = []
+    policy = []
+    value = []
+
+    # now that all the moves and results are parsed out, start analyzing.
+    for j in range(len(moves_chosen)):
+
+        if j % 100 == 99:
+            print("Parsing", int(j+1), "th game...")
+
+        temp = Board()
+        outcome = results[j]
+
+        for k in range(len(moves_chosen[j])):
+            if temp.half_moves % 2 == 0 and not temp.white_has_promoted():  # we only consider pawn moves by white ...
+                state = state_to_database(temp.current_state())
+                action = move_representation_dict()[moves_chosen[j][k]]
+
+                # then save information onto database
+                states.append(state)
+                policy.append(action)
+                value.append(outcome)
+
+            else:  # we do not save information regarding the board.
+                print("", end="")
+
+            temp.move(moves_chosen[j][k])
+
+    states = np.asarray(states)
+    policy = np.asarray(policy)
+    value = np.asarray(value)
+
+    print("Total number of positions:", len(states))
+
+    # save outputs!
+    saveName = 'training_data/lichess_database.h5'
+
+    with h5py.File(saveName, 'w') as hf:
+        hf.create_dataset("States", data=states, compression='gzip', compression_opts=5)
+        hf.create_dataset("Policy", data=policy, compression='gzip', compression_opts=5)
+        hf.create_dataset("Value", data=value, compression='gzip', compression_opts=5)
