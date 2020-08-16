@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
             print('Epoch [{}/{}], Step [{}/{}], Policy Loss: {:.4f}, Value Loss: {:.4f}'
                   .format(epoch + 1, EPOCHS, i + 1, total_step, policy_loss.item(), value_loss.item()))
-            if (i + 1) % 40 == 0:
+            if (i + 1) % 400 == 0:
                 # Save Model
                 torch.save({
                     'model_state_dict': model.state_dict(),
@@ -77,17 +77,17 @@ if __name__ == "__main__":
                     'loss': total_loss,
                 }, SAVE_DIRECTORY)
 
-            if (i + 1) % 20 == 0:   # check train accuracy on a small portion of the train set.
+            if (i + 1) % 200 == 0:   # check train accuracy on a small portion of the train set.
                 # find predicted labels
-                values = np.exp((model(images)[0].data.detach().to(DEVICE).numpy()))
+                values = np.exp((model(images)[0].data.detach().cpu().numpy()))
                 print("MAX:", np.amax(np.amax(values, axis=1)))
                 print("MIN:", np.amin(np.amin(values, axis=1)))
 
                 _, predicted = torch.max(model(images)[0].data, 1)
-                predicted = predicted.to(DEVICE).numpy()
+                predicted = predicted.cpu().numpy()
 
                 _, actual = torch.max(policy_labels.data, 1)  # for poisson nll loss
-                actual = actual.numpy()
+                actual = actual.cpu().numpy()
 
                 print("Predicted:", predicted)
                 print("Actual:", actual)
