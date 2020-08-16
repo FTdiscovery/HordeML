@@ -20,7 +20,7 @@ if __name__ == "__main__":
         print(file)
         pgn = open(file)
 
-        for i in range(150):
+        for i in range(5000):
             try:
                 game = chess.pgn.read_game(pgn)
                 whiteElo = int(game.headers["WhiteElo"])
@@ -70,6 +70,9 @@ if __name__ == "__main__":
                 state = state_to_database(temp.current_state())
                 action = move_representation_dict()[moves_chosen[j][k]]
 
+                if np.sum(temp.current_state().flatten() - database_to_state(state).flatten()) != 0:
+                    print("bitboard corrupted...")
+
                 # then save information onto database
                 states.append(state)
                 policy.append(action)
@@ -80,10 +83,11 @@ if __name__ == "__main__":
 
             temp.move(moves_chosen[j][k])
 
-    states = np.asarray(states)
+    states = np.asarray(states, dtype=np.uint64)
     policy = np.asarray(policy)
     value = np.asarray(value)
 
+    print(database_to_state(states[0]))
     print("Total number of positions:", len(states))
 
     # save outputs!

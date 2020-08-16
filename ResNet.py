@@ -132,7 +132,7 @@ if __name__ == "__main__":
     policy, value = net.forward(fake)
 
     policy = sigmoid(policy.detach().numpy()[0])  # this determines probability of one making am ove
-    value = value.detach().numpy()[0, 0]  # this determines win probability
+    value = value.detach().numpy()[0, 0]  # this determines win probability. should be from -1 to 1
 
     print(np.sum(policy))  # should sum up to 1 (or be pretty close to it)
     print(value)

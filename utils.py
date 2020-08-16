@@ -10,8 +10,7 @@ def numpy_to_bitboard(arr):  # converts a numpy 8 x 8 matrix into an integer
 
 def bitboard_to_numpy(num):  # converts integer into a numpy 8 x 8 matrix.
     arr = np.zeros((8, 8))
-    bitboard = str(format(num, 'b').zfill(64))
-    print(bitboard)
+    bitboard = str(format(num, '064b'))
     for i in range(8):
         for j in range(8):
             if bitboard[8*i+j] == '1':
@@ -20,10 +19,18 @@ def bitboard_to_numpy(num):  # converts integer into a numpy 8 x 8 matrix.
     return arr
 
 def state_to_database(state):  # converts a 9 x 8 x 8 state representation into an array of 9 integers.
-    data = []
+    data = np.zeros((1, 9)).astype(np.uint64)
+    idx = 0
     for board in state:
-        data.append(numpy_to_bitboard(board))
-    return np.asarray(data).reshape(1, -1)
+        data[0, idx] = numpy_to_bitboard(board)
+        idx += 1
+    return data
+
+def database_to_state(database):
+    arr = np.zeros((9, 8, 8))
+    for i in range(9):
+        arr[i] = bitboard_to_numpy(database[0][i])
+    return arr
 
 def square_name(num):  # converts square number into name
     files = 'abcdefgh'
@@ -78,9 +85,26 @@ def array_to_move(arr):
     dict = move_representation_dict()
     return list(dict.keys())[list(dict.values()).index(np.argmax(arr))]
 
+def win_rate(value):  # value has to be in numpy
+    return 50 * value + 50
+
+def policy_of_move(move, predictions):  # assumes predictions is converted into probabilities already.
+    return predictions[move_representation_dict()[move]]
+
+def move_evaluations(moves, policy):
+    arr = np.zeros(len(moves))
+    for i in range(len(moves)):
+        arr[i] = policy_of_move(moves[i], policy)
+    return arr
+
+def best_move(moves, policy):
+    return moves[np.argmax(move_evaluations(moves, policy))]
 
 if __name__ == "__main__":
-    print(array_to_move(move_to_array('a7a8b')))
+    print(move_representation_dict())
+    pseudo_board = np.zeros((9, 8, 8))
+    pseudo_board[1, 1, 1] = 1
+    print(database_to_state(state_to_database(pseudo_board)))
 
 
 
