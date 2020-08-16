@@ -69,7 +69,7 @@ class Board:
         if self.board.is_game_over():
             if self.board.is_stalemate():
                 return 0
-            elif self.board.is_checkmate():
+            elif self.board.is_variant_end():
                 if self.half_moves % 2 == 1:  # white moved last, ergo win for white.
                     return 1
                 else:
